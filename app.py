@@ -48,7 +48,7 @@ class CreditCard(BaseModel):
 
 class Order(BaseModel):
     id=p.AutoField(primary_key=True)
-    idProduit=p.ForeignKeyField(Product, backref= "produit", null = False)
+    idProduct=p.ForeignKeyField(Product, backref= "product", null = False)
     quantity=p.IntegerField(null=False)
     creditCard=p.ForeignKeyField(CreditCard,backref="creditcard")
     shippingInformation=p.ForeignKeyField(ShippingInformation,backref="info shiping")
