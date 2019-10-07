@@ -16,16 +16,58 @@ class BaseModel(p.Model):
 
 
 class Product(BaseModel):
-    #todo
+    id=p.AutoField(primary_key=true)
+    inStock= p.BooleanField(default=true)
+    description= p.TextField()
+    price = p.DoubleField()
+    image = p.TextField()
+
+class ShippingInformation(BaseModel):
+    id=p.Autofield(primary_key=true)
+    country=p.TextField()
+    address=p.TextField()
+    postalCode=p.TextField()
+    city=p.TextField()
+    province=p.TextField()
+
+class Transaction(BaseModel):
+    id=p.Autofield(primary_key=true)
+    success=p.BooleanField()
+    amount_charged=p.DoubleField()
+
+
+class CreditCard(BaseModel):
+    id=p.Autofield(primary_key=true)
+    name=p.TextField()
+    number=p.TextField()
+    exipration_year=p.IntegerField()
+    cvv=p.IntegerField()
+    expiration_month=p.IntegerField()
 
 
 class Order(BaseModel):
-    #todo
+    id=p.AutoField(primary_key=true)
+    idProduit=p.ForeignKeyField(Product, backref= "produit", null = false)
+    quantity=p.IntegerField(null=false)
+    creditCard=p.ForeignKeyField(CreditCard,backref="creditcard")
+    shippingInformation=p.ForeignKeyField(ShippingInformation,backref="info shiping")
+    transaction=p.ForeignKeyField(Transaction,backref="transactions")
+    shippingPrice=p.DoubleField()
+    email=p.TextField()
+    paid=p.BooleanField()
+
+
+
+
+    
+    
 
 
 @app.route('/', methods=['GET'])
 def products():
     #todo
+
+@app.route('/')
 
 @app.route('/order', methods=['POST'])
 def order_create():
@@ -33,7 +75,12 @@ def order_create():
 
 @app.route('/order/<int:order_id>', methods=['GET'])
 def order_get(id):
-    #todo
+    order = Order.get_or_none(id)
+    if order_id is None;
+        return abort(404)
+
+
+    
 
 @app.route('/order/<int:order_id>', methods=['PUT'])
 def order_put(id):
