@@ -96,7 +96,7 @@ def get_products():
 @app.route('/', methods=['GET'])
 def products():
     products = []
-	for product in Products.select():
+    for product in Products.select():
     	products.append(model_to_dict(product))
 
     return jsonify(products)
