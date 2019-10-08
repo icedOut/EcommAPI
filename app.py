@@ -17,7 +17,7 @@ class BaseModel(p.Model):
         database = db
 
 class Product(BaseModel):
-    id=p.AutoField(primary_key=True)
+    id=p.IntegerField(primary_key=True)
     in_stock = p.BooleanField(default=True)
     description= p.TextField()
     price = p.DoubleField()
@@ -47,15 +47,15 @@ class CreditCard(BaseModel):
     expiration_month=p.IntegerField()
 
 class Order(BaseModel):
-    id=p.AutoField(primary_key=True)
-    idProduct=p.ForeignKeyField(Product, backref= "product", null = False)
+    order_id=p.AutoField(primary_key=True)
+    id=p.ForeignKeyField(Product, backref="product", null=False)
     quantity=p.IntegerField(null=False)
-    creditCard=p.ForeignKeyField(CreditCard,backref="creditcard")
-    shippingInformation=p.ForeignKeyField(ShippingInformation,backref="info shiping")
-    transaction=p.ForeignKeyField(Transaction,backref="transactions")
-    shippingPrice=p.DoubleField()
-    email=p.TextField()
-    paid=p.BooleanField()
+    creditCard=p.ForeignKeyField(CreditCard, backref="creditcard", null=True)
+    shippingInformation=p.ForeignKeyField(ShippingInformation, backref="info shiping", null=True)
+    transaction=p.ForeignKeyField(Transaction, backref="transactions", null=True)
+    shippingPrice=p.DoubleField(null=True)
+    email=p.TextField(null=True)
+    paid=p.BooleanField(null=True)
 
 def perform_request(uri, method="GET", data=None):
     request = Request('https://caissy.dev/shops/{0}'.format(uri))
@@ -101,11 +101,22 @@ def products_get():
 
     return jsonify(products)
 
+@app.route('/order', methods=['POST'])
+def order_post():
+	if not request.is_json:
+		return abort(400)
+
+	json_payload = request.json['product']
+	new_order = dict_to_model(Order, json_payload)
+	new_order.save(force_insert=True)
+	return redirect(url_for("order_get", order_id=new_order.order_id))
+
 @app.route('/order/<int:order_id>', methods=['GET'])
-def order_get(id):
-    order = Order.get_or_none(id)
-    if order_id is None:
-        return abort(404)  
+def order_get(order_id):
+	order = Order.get_or_none(order_id)
+	if order_id is None:
+		return abort(404)
+	return jsonify(model_to_dict(order))
 
 @app.cli.command("init-db")
 def init_db():
