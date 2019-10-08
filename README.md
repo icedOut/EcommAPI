@@ -1,2 +1,6 @@
 # projet-de-session-dream-team
-projet-de-session-dream-team created by GitHub Classroom
+
+How-to run the app:
+-set FLASK_APP=app
+-flask init-db
+-flask run
