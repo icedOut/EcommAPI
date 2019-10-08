@@ -12,21 +12,21 @@ app = Flask(__name__)
 
 db = p.SqliteDatabase("db.sqlite")
 
-get_products()
-
 class BaseModel(p.Model):
     class Meta:
         database = db
 
 class Product(BaseModel):
     id=p.AutoField(primary_key=True)
-    inStock= p.BooleanField(default=True)
+    in_stock = p.BooleanField(default=True)
     description= p.TextField()
     price = p.DoubleField()
     image = p.TextField()
+    name = p.TextField()
+    weight = p.IntegerField()
 
 class ShippingInformation(BaseModel):
-    id=p.Autofield(primary_key=True)
+    id=p.AutoField(primary_key=True)
     country=p.TextField()
     address=p.TextField()
     postalCode=p.TextField()
@@ -34,12 +34,12 @@ class ShippingInformation(BaseModel):
     province=p.TextField()
 
 class Transaction(BaseModel):
-    id=p.Autofield(primary_key=True)
+    id=p.AutoField(primary_key=True)
     success=p.BooleanField()
     amount_charged=p.DoubleField()
 
 class CreditCard(BaseModel):
-    id=p.Autofield(primary_key=True)
+    id=p.AutoField(primary_key=True)
     name=p.TextField()
     number=p.TextField()
     exipration_year=p.IntegerField()
@@ -88,33 +88,26 @@ def perform_request(uri, method="GET", data=None):
 
 def get_products():
 	json_products = perform_request("products")
-
-	for product in json_products:
-		product = dict_to_model(Product, product)
-		product.save()
+	for product in json_products['products']:
+		my_product = dict_to_model(Product, product)
+		my_product.save(force_insert=True)
 
 @app.route('/', methods=['GET'])
-def products():
+def products_get():
     products = []
-    for product in Products.select():
+
+    for product in Product.select():
     	products.append(model_to_dict(product))
 
     return jsonify(products)
 
-@app.route('/order', methods=['POST'])
-def order_create():
-    #todo
-
 @app.route('/order/<int:order_id>', methods=['GET'])
 def order_get(id):
     order = Order.get_or_none(id)
-    if order_id is None;
-        return abort(404)
-
-@app.route('/order/<int:order_id>', methods=['PUT'])
-def order_put(id):
-    #todo    
+    if order_id is None:
+        return abort(404)  
 
 @app.cli.command("init-db")
 def init_db():
-    #todo
+    db.create_tables([Product, Transaction, ShippingInformation, Order, CreditCard])
+    get_products()
