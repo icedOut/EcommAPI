@@ -109,7 +109,6 @@ def order_post():
 	json_payload = request.json['product']
 	new_order = dict_to_model(Order, json_payload)
 	new_order.save(force_insert=True)
-	return redirect(url_for("order_get", order_id=new_order.order_id))
 
 @app.route('/order/<int:order_id>', methods=['GET'])
 def order_get(order_id):
