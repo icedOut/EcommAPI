@@ -5,12 +5,25 @@ import click
 from flask import Flask, jsonify, request, abort, redirect, url_for
 import peewee as p
 from playhouse.shortcuts import model_to_dict, dict_to_model
+from playhouse.sqlite_ext import *
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 app = Flask(__name__)
 
 db = p.SqliteDatabase("db.sqlite")
+
+class JSONField(p.TextField):
+    """
+    Class to "fake" a JSON field with a text field. Not efficient but works nicely
+    """
+    def db_value(self, value):
+        """Convert the python value for storage in the database."""
+        return value if value is None else json.dumps(value)
+
+    def python_value(self, value):
+        """Convert the database value to a pythonic value."""
+        return value if value is None else json.loads(value)
 
 class BaseModel(p.Model):
     class Meta:
@@ -47,9 +60,8 @@ class CreditCard(BaseModel):
     expiration_month=p.IntegerField()
 
 class Order(BaseModel):
-    order_id=p.AutoField(primary_key=True)
-    id=p.ForeignKeyField(Product, backref="product", null=False)
-    quantity=p.IntegerField(null=False)
+    id=p.AutoField(primary_key=True)
+    product = JSONField(p.TextField(null=True))
     creditCard=p.ForeignKeyField(CreditCard, backref="creditcard", null=True)
     shippingInformation=p.ForeignKeyField(ShippingInformation, backref="info shiping", null=True)
     transaction=p.ForeignKeyField(Transaction, backref="transactions", null=True)
@@ -107,8 +119,10 @@ def order_post():
 		return abort(400)
 
 	json_payload = request.json['product']
-	new_order = dict_to_model(Order, json_payload)
+	new_order = Order()
+	new_order.product = json_payload
 	new_order.save(force_insert=True)
+	return redirect('/order/' + str(new_order.id))
 
 @app.route('/order/<int:order_id>', methods=['GET'])
 def order_get(order_id):
