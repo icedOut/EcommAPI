@@ -40,10 +40,10 @@ class Product(BaseModel):
 class Order(BaseModel):
     id=p.AutoField(primary_key=True)
     product = JSONField(p.TextField(null=True))
-    creditCard=JSONField(default={})
-    shippingInformation=JSONField(default={})
+    credit_card=JSONField(default={})
+    shipping_information=JSONField(default={})
     transaction= JSONField(default={})
-    shippingPrice=p.DoubleField(default=0)
+    shipping_price=p.DoubleField(default=0)
     email=p.TextField(null=True)
     paid=p.BooleanField(default=False)
     total_price=p.DoubleField(default=0)
@@ -94,27 +94,49 @@ def products_get():
 
 @app.route('/order', methods=['POST'])
 def order_post():
-	json_payload = []
 	if not request.is_json:
 		return abort(400)
 	try:
-		json_payload = request.json['productz']
+		json_payload = request.json['product']
+		quantity = json_payload['quantity']
+		product_id = json_payload['id']
 	except KeyError:
-		return jsonify({"code": "missing-fields", "name": "La création d'une commande nécessite un produit"}), 422
+		return error_message("product", "missing-fields", "La création d'une commande nécessite un produit"), 422
 
-	product = Product.get_or_none(json_payload.id)
-	
+	if quantity <= 0:
+		return error_message("product", "missing-fields", "La création d'une commande nécessite un produit"), 422
+
+	product = Product.get_or_none(product_id)
+
+	if product is None or not product.in_stock:
+		return error_message("product", "out-of-inventory", "Le produit demandé n'est pas en inventaire"), 422
+
 	new_order = Order()
 	new_order.product = json_payload
+	calculate_price(product, new_order, quantity)
 	new_order.save(force_insert=True)
 	return Response("Location: /order/" + str(new_order.id), 302)
 
 @app.route('/order/<int:order_id>', methods=['GET'])
 def order_get(order_id):
 	order = Order.get_or_none(order_id)
-	if order_id is None:
+	if order is None:
 		return abort(404)
 	return jsonify(model_to_dict(order))
+
+def error_message(field, code, name):
+	return jsonify({ "errors" : { field : {"code" : code, "name" : name}}})
+
+def calculate_price(product, order, quantity):
+	order.total_price = product.price * quantity 
+
+	total_weight = product.weight * quantity 
+	if total_weight < 500:
+		order.shipping_price = 5
+	elif total_weight < 2000:
+		order.shipping_price = 10
+	else:
+		order.shipping_price = 25
 
 @app.cli.command("init-db")
 def init_db():
