@@ -117,6 +117,29 @@ def order_post():
 	new_order.save(force_insert=True)
 	return Response("Location: /order/" + str(new_order.id), 302)
 
+@app.route('/order/<int:order_id>', methods=['PUT'])
+def order_put(order_id):
+	if not request.is_json:
+		return abort(400)
+	try:
+		json_payload = request.json['order']
+		email = json_payload['email']
+		shipping_information = json_payload['shipping_information']
+		country = shipping_information['country']
+		address = shipping_information['address']
+		postal_code = shipping_information['postal_code']
+		city = shipping_information['city']
+		province = shipping_information['province']
+	except KeyError:
+		return error_message("shipping_information", "missing-fields", "Il manque un ou plusieurs champs qui sont obligatoire"), 422
+
+	order = Order.get_or_none(order_id)
+	order.email = email
+	order.shipping_information = shipping_information
+	order.update()
+
+	return Response("great" , 200)
+
 @app.route('/order/<int:order_id>', methods=['GET'])
 def order_get(order_id):
 	order = Order.get_or_none(order_id)
