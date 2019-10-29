@@ -145,11 +145,11 @@ def order_put(order_id):
 		order.update()
 		
 		# INSÉRER L'APPEL DISTANT ICI AVEC L'OBJECT CREDIT_CARD 
-		data= dict(credit_card=order.credit_card,amount_charged = order.total_price )
-		r= requests.post("https://caissy.dev/shops/pay",json=data ,timeout = .5)
+		amount_charged_int = int(order.total_price)
+		data= dict(credit_card=order.credit_card,amount_charged = int(order.total_price ))
+		r= requests.post("https://caissy.dev/shops/pay",json=data ,timeout = 1)  # timeout = .5 N'est 
 		r = r.json()
-		print(r)
-		return Response("great" , 200)
+		return r
 		
 		
 	if (call_value == 'order'):
