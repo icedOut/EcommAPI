@@ -1,6 +1,8 @@
 import json
 import datetime
+import time
 
+import requests
 import click
 from flask import Flask, jsonify, request, abort, redirect, url_for, Response
 import peewee as p
@@ -143,8 +145,11 @@ def order_put(order_id):
 		order.update()
 		
 		# INSÉRER L'APPEL DISTANT ICI AVEC L'OBJECT CREDIT_CARD 
-		
-		return Response("carte_credit", 200)
+		data= dict(credit_card=order.credit_card,amount_charged = order.total_price )
+		r= requests.post("https://caissy.dev/shops/pay",json=data ,timeout = .5)
+		r = r.json()
+		print(r)
+		return Response("great" , 200)
 		
 		
 	if (call_value == 'order'):
