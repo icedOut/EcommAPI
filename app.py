@@ -115,28 +115,22 @@ def order_post():
 	new_order.product = json_payload
 	calculate_price(product, new_order, quantity)
 	new_order.save(force_insert=True)
+
 	return Response("Location: /order/" + str(new_order.id), 302)
 
 @app.route('/order/<int:order_id>', methods=['PUT'])
 def order_put(order_id):
 	if not request.is_json:
 		return abort(400)
-	try:
-		json_payload = request.json['order']
-		email = json_payload['email']
-		shipping_information = json_payload['shipping_information']
-		country = shipping_information['country']
-		address = shipping_information['address']
-		postal_code = shipping_information['postal_code']
-		city = shipping_information['city']
-		province = shipping_information['province']
-	except KeyError:
-		return error_message("shipping_information", "missing-fields", "Il manque un ou plusieurs champs qui sont obligatoire"), 422
-
-	order = Order.get_or_none(order_id)
-	order.email = email
-	order.shipping_information = shipping_information
-	order.update()
+	json_payload = request.json
+	if 'order' in json_payload:
+		if 'credit_card' in json_payload:				
+			return error_message("shipping_information", "bad-request", "On ne peut pas fournir un email et shipping_information avec une carte de crédit"), 422
+		order_put_shipping_information(json_payload, order_id)
+	elif 'credit_card' in json_payload:
+			order_put_credit_card(json_payload, order_id)
+	else:
+		return error_message("product", "missing-fields", "La création d'une commande nécessite un produit"), 422
 
 	return Response("great" , 200)
 
@@ -160,6 +154,30 @@ def calculate_price(product, order, quantity):
 		order.shipping_price = 10
 	else:
 		order.shipping_price = 25
+
+def order_put_shipping_information(json_payload, order_id):
+	try:
+		json_payload = json_payload['order']
+		email = json_payload['email']
+		shipping_information = json_payload['shipping_information']
+		country = shipping_information['country']
+		address = shipping_information['address']
+		postal_code = shipping_information['postal_code']
+		city = shipping_information['city']
+		province = shipping_information['province']
+	except KeyError:
+		return error_message("shipping_information", "missing-fields", "Il manque un ou plusieurs champs qui sont obligatoire"), 422
+
+	order = Order.get_or_none(order_id)
+	order.email = email
+	order.shipping_information = shipping_information
+	order.save()
+
+def order_put_credit_card(json_payload, order_id):
+	order = Order.get_or_none(order_id)
+	ammount_charged = order.shipping_price + order.total_price
+	json_payload['amount_charged'] = ammount_charged
+	response = perform_request("pay", "POST", jsonify(json_payload))
 
 @app.cli.command("init-db")
 def init_db():
