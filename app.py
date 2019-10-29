@@ -120,25 +120,50 @@ def order_post():
 @app.route('/order/<int:order_id>', methods=['PUT'])
 def order_put(order_id):
 	if not request.is_json:
-		return abort(400)
-	try:
-		json_payload = request.json['order']
-		email = json_payload['email']
-		shipping_information = json_payload['shipping_information']
-		country = shipping_information['country']
-		address = shipping_information['address']
-		postal_code = shipping_information['postal_code']
-		city = shipping_information['city']
-		province = shipping_information['province']
-	except KeyError:
-		return error_message("shipping_information", "missing-fields", "Il manque un ou plusieurs champs qui sont obligatoire"), 422
+	    return abort(400)
+	
+	json_payload = request.get_json()
+	for key in json_payload.keys(): call_value = (key)
+	
+	if (call_value == 'credit_card'):
+		
+		try:
+			credit_card = json_payload['credit_card']
+			name = credit_card['name']
+			number = credit_card['number']
+			expiration_year = credit_card['expiration_year']
+			cvv = credit_card['cvv']
+			expiration_month = credit_card['expiration_month']
+		except KeyError:
+			return error_message("credit_card", "missing-fields", "Il manque un ou plusieurs champs qui sont obligatoire"), 422
+	
+			
+		order = Order.get_or_none(order_id)
+		order.credit_card = credit_card
+		order.update()	
+		return Response("carte_credit", 200)
+		
+	if (call_value == 'order'):
+		try: 
+			json_payload = request.json['order'] 
+			email = json_payload['email']
+			shipping_information = json_payload['shipping_information']
+			country = shipping_information['country']
+			address = shipping_information['address']
+			postal_code = shipping_information['postal_code']
+			city = shipping_information['city']
+			province = shipping_information['province']	
+		except KeyError:
+			return error_message("shipping_information", "missing-fields", "Il manque un ou plusieurs champs qui sont obligatoire"), 422
 
-	order = Order.get_or_none(order_id)
-	order.email = email
-	order.shipping_information = shipping_information
-	order.update()
-
-	return Response("great" , 200)
+		order = Order.get_or_none(order_id)
+		order.email = email
+		order.shipping_information = shipping_information
+		order.update()
+		return Response("great" , 200)
+	
+	
+	
 
 @app.route('/order/<int:order_id>', methods=['GET'])
 def order_get(order_id):
