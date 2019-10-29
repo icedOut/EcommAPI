@@ -140,8 +140,12 @@ def order_put(order_id):
 			
 		order = Order.get_or_none(order_id)
 		order.credit_card = credit_card
-		order.update()	
+		order.update()
+		
+		# INSÉRER L'APPEL DISTANT ICI AVEC L'OBJECT CREDIT_CARD 
+		
 		return Response("carte_credit", 200)
+		
 		
 	if (call_value == 'order'):
 		try: 
