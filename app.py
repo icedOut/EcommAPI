@@ -67,7 +67,8 @@ def perform_request(uri, method="GET", data=None):
             else:
                 return None
     except HTTPError as e:
-        return jsonify(data)
+    	data = e.read().decode()
+    	return json.loads(data)
 
 def get_products():
 	json_products = perform_request("products")
@@ -96,7 +97,7 @@ def order_post():
 		return error_message("product", "missing-fields", "La création d'une commande nécessite un produit"), 422
 
 	if quantity <= 0:
-		return error_message("product", "missing-fields", "La création d'une commande nécessite un produit"), 422
+		return error_message("product", "out-of-inventory", "Le produit demandé n'est pas en inventaire"), 422
 
 	product = Product.get_or_none(product_id)
 
@@ -115,6 +116,10 @@ def order_put(order_id):
 	if not request.is_json:
 		return abort(400)
 
+	order = Order.get_or_none()
+	if(order == None):
+		return error_message("order", "no-order-found", "Aucune commande avec ce ID a été trouvée"), 404
+
 	json_payload = request.json
 
 	if 'order' in json_payload:
@@ -124,15 +129,13 @@ def order_put(order_id):
 	elif 'credit_card' in json_payload:
 		return order_put_credit_card(json_payload, order_id)
 	else:
-		return error_message("product", "missing-fields", "La création d'une commande nécessite un produit"), 422
-
-	return Response("great" , 200)
+		return error_message("order", "missing-fields", "Aucune information de commande a été trouvée"), 422
 
 @app.route('/order/<int:order_id>', methods=['GET'])
 def order_get(order_id):
 	order = Order.get_or_none(order_id)
 	if order is None:
-		return abort(404)
+		return error_message("order", "no-order-found", "Aucune commande avec ce ID a été trouvée"), 404
 	return jsonify(dict(order=model_to_dict(order)))
 
 def error_message(field, code, name):
@@ -172,6 +175,12 @@ def order_put_credit_card(json_payload, order_id):
 	
 	order = Order.get_or_none(order_id)
 
+	if(order.paid == True):
+		return error_message("order", "already-paid", "La commande a déjà été payée"), 422
+
+	if(order.shipping_information == {}):
+		return error_message("order", "missing-fields", "Les informations du clients sont nécessaire avant d'appliquer une carte de crédit"), 422
+
 	try:
 		credit_card = json_payload['credit_card']
 		name = credit_card['name']
@@ -195,7 +204,7 @@ def order_put_credit_card(json_payload, order_id):
 		order.save()
 		return redirect(url_for("order_get", order_id=order.id))
 	else:
-		return r
+		return jsonify(r), 422
 
 @app.cli.command("init-db")
 def init_db():
