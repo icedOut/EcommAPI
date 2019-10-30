@@ -1,10 +1,6 @@
 import pytest
 from flask import url_for
 
-
-class TestApp:
-
-    def test_get(self, client):
-        res = client.get(url_for('/'))
-        assert res.status_code == 200
+def test_01_GET(client):
+	assert client.get(url_for('products_get')).status_code == 200
         
