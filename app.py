@@ -1,5 +1,6 @@
 import json
 import datetime
+import time
 
 import click
 from flask import Flask, jsonify, request, abort, redirect, url_for, Response
@@ -66,16 +67,7 @@ def perform_request(uri, method="GET", data=None):
             else:
                 return None
     except HTTPError as e:
-        code = e.code
-        headers = e.headers
-        data = e.read()
-
-        error = ApiError()
-        error.code = code
-        if headers['content-type'] == "application/json":
-            error.content = json.loads(data)
-
-        raise error
+        return jsonify(data)
 
 def get_products():
 	json_products = perform_request("products")
@@ -116,19 +108,21 @@ def order_post():
 	calculate_price(product, new_order, quantity)
 	new_order.save(force_insert=True)
 
-	return Response("Location: /order/" + str(new_order.id), 302)
+	return redirect(url_for("order_get", order_id=new_order.id))
 
 @app.route('/order/<int:order_id>', methods=['PUT'])
 def order_put(order_id):
 	if not request.is_json:
 		return abort(400)
+
 	json_payload = request.json
+
 	if 'order' in json_payload:
 		if 'credit_card' in json_payload:				
 			return error_message("shipping_information", "bad-request", "On ne peut pas fournir un email et shipping_information avec une carte de crédit"), 422
-		order_put_shipping_information(json_payload, order_id)
+		return order_put_shipping_information(json_payload, order_id)
 	elif 'credit_card' in json_payload:
-			order_put_credit_card(json_payload, order_id)
+		return order_put_credit_card(json_payload, order_id)
 	else:
 		return error_message("product", "missing-fields", "La création d'une commande nécessite un produit"), 422
 
@@ -139,7 +133,7 @@ def order_get(order_id):
 	order = Order.get_or_none(order_id)
 	if order is None:
 		return abort(404)
-	return jsonify(model_to_dict(order))
+	return jsonify(dict(order=model_to_dict(order)))
 
 def error_message(field, code, name):
 	return jsonify({ "errors" : { field : {"code" : code, "name" : name}}})
@@ -172,12 +166,36 @@ def order_put_shipping_information(json_payload, order_id):
 	order.email = email
 	order.shipping_information = shipping_information
 	order.save()
+	return redirect(url_for("order_get", order_id=order.id))
 
 def order_put_credit_card(json_payload, order_id):
+	
 	order = Order.get_or_none(order_id)
-	ammount_charged = order.shipping_price + order.total_price
-	json_payload['amount_charged'] = ammount_charged
-	response = perform_request("pay", "POST", jsonify(json_payload))
+
+	try:
+		credit_card = json_payload['credit_card']
+		name = credit_card['name']
+		number = credit_card['number']
+		expiration_year = credit_card['expiration_year']
+		cvv = credit_card['cvv']
+		expiration_month = credit_card['expiration_month']
+	except KeyError:
+		return error_message("credit_card", "missing-fields", "Il manque un ou plusieurs champs qui sont obligatoire"), 422
+		
+	# INSÉRER L'APPEL DISTANT ICI AVEC L'OBJECT CREDIT_CARD 
+	amount_charged = int(order.total_price) + int(order.shipping_price)
+	data = dict(credit_card=credit_card,amount_charged = amount_charged)
+
+	r = perform_request("pay" ,"POST", data)
+
+	if('transaction' in r):
+		order.credit_card = r['credit_card']
+		order.transaction = r['transaction']
+		order.paid = True
+		order.save()
+		return redirect(url_for("order_get", order_id=order.id))
+	else:
+		return r
 
 @app.cli.command("init-db")
 def init_db():
