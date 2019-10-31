@@ -3,7 +3,8 @@ import pytest
 
 @pytest.fixture
 def app():
-    return inf5190.app
+	app.debug = True
+	return inf5190.app
 
 	
 
