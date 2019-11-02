@@ -62,6 +62,15 @@ def test_09_ORDER_PUT_NO_EMAIL(client):
 	data = dict(order=dict(shipping_information=dict(country='canada',province='QC')))
 	status_code = client.put(url_for('order_put',order_id=1),data=json.dumps(data),headers=headers).status_code
 	assert status_code == 422
+	text_response=client.put(url_for('order_put',order_id=1),data=json.dumps(data),headers=headers).get_json()
+	assert text_response == {
+    "errors": {
+        "shipping_information": {
+            "code": "missing-fields",
+            "name": "Il manque un ou plusieurs champs qui sont obligatoire"
+        }
+    }
+}
 	inf5190.reset_orders()
 	
 def test_10_ORDER_PUT_ORDER_NOT_FOUND(client):
@@ -100,7 +109,16 @@ def test_13_ORDER_PUT_CREDIT_CARD_ALREADY_PAID(client):
 	data2 = dict(credit_card=dict(name="john doe",number="4242 4242 4242 4242",expiration_year=2024,cvv="123",expiration_month=9))
 	response2 = client.put(url_for('order_put',order_id=1),data=json.dumps(data2),headers=headers).status_code
 	response3 = client.put(url_for('order_put',order_id=1),data=json.dumps(data2),headers=headers).status_code
+	text_response = client.put(url_for('order_put',order_id=1),data=json.dumps(data2),headers=headers).get_json()
 	assert response3 == 422
+	assert text_response == {
+   "errors" : {
+       "order": {
+           "code": "already-paid",
+           "name": "La commande a déjà été payée."
+       }
+   }
+}
 	inf5190.reset_orders()
 	
 def test_14_ORDER_PUT_CREDIT_CARD_DECLINED_CARD(client):
@@ -111,7 +129,16 @@ def test_14_ORDER_PUT_CREDIT_CARD_DECLINED_CARD(client):
 	response = client.put(url_for('order_put',order_id=1),data=json.dumps(data),headers=headers).status_code
 	data2 = dict(credit_card=dict(name="john doe",number="4000 0000 0000 0002",expiration_year=2024,cvv="123",expiration_month=9))
 	response2 = client.put(url_for('order_put',order_id=1),data=json.dumps(data2),headers=headers).status_code
+	text_response = client.put(url_for('order_put',order_id=1),data=json.dumps(data2),headers=headers).get_json()
 	assert response2 == 422
+	assert text_response == {
+    "errors": {
+        "credit_card": {
+            "code": "card-declined",
+            "name": "La carte de crédit a été déclinée."
+        }
+    }
+}
 	inf5190.reset_orders()
 	
 def test_15_ORDER_PUT_CREDIT_CARD_INVALID_NUMBER(client):
@@ -122,6 +149,15 @@ def test_15_ORDER_PUT_CREDIT_CARD_INVALID_NUMBER(client):
 	response = client.put(url_for('order_put',order_id=1),data=json.dumps(data),headers=headers).status_code
 	data2 = dict(credit_card=dict(name="john doe",number="4000 0000 0000 2222",expiration_year=2024,cvv="123",expiration_month=9))
 	response2 = client.put(url_for('order_put',order_id=1),data=json.dumps(data2),headers=headers).status_code
+	text_response = client.put(url_for('order_put',order_id=1),data=json.dumps(data2),headers=headers).get_json()
 	assert response2 == 422
+	assert text_response == {
+    "errors": {
+        "credit_card": {
+            "code": "incorrect-number",
+            "name": "Le numéro de la carte de crédit est invalide"
+        }
+    }
+}
 	inf5190.reset_orders()
 	
