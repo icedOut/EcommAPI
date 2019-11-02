@@ -161,3 +161,23 @@ def test_15_ORDER_PUT_CREDIT_CARD_INVALID_NUMBER(client):
 }
 	inf5190.reset_orders()
 	
+def test_16_ORDER_PUT_CREDIT_CARD_NO_INFO_ERROR(client):
+	headers = {'Content-Type' : 'application/json'}
+	json_post = dict(product=dict(id=1231,quantity=2))
+	post = client.post(url_for('order_post'), data=json.dumps(json_post),headers=headers).status_code
+	data = dict(credit_card=dict(name="john doe",number="4242 4242 4242 4242",expiration_year=2024,cvv="123",expiration_month=9))
+	response = client.put(url_for('order_put',order_id=1),data=json.dumps(data),headers=headers).status_code
+	text_response = client.put(url_for('order_put',order_id=1),data=json.dumps(data),headers=headers).get_json()
+	assert response == 422
+	assert text_response == {
+    "errors": {
+        "order": {
+            "code": "missing-fields",
+            "name": "Les informations du clients sont nécessaire avant d'appliquer une carte de crédit"
+        }
+    }
+}
+	inf5190.reset_orders()
+	
+	
+	
