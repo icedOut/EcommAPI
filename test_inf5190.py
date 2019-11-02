@@ -103,3 +103,25 @@ def test_13_ORDER_PUT_CREDIT_CARD_ALREADY_PAID(client):
 	assert response3 == 422
 	inf5190.reset_orders()
 	
+def test_14_ORDER_PUT_CREDIT_CARD_DECLINED_CARD(client):
+	headers = {'Content-Type' : 'application/json'}
+	json_post = dict(product=dict(id=1231,quantity=2))
+	post = client.post(url_for('order_post'), data=json.dumps(json_post),headers=headers).status_code
+	data = dict(order=dict(email="caissy.jean-philippe@uqam.ca",shipping_information=dict(country='canada', address='201, rue president kennedy' , postal_code = 'H2X 3Y7' , city = 'Montreal' , province='QC')))
+	response = client.put(url_for('order_put',order_id=1),data=json.dumps(data),headers=headers).status_code
+	data2 = dict(credit_card=dict(name="john doe",number="4000 0000 0000 0002",expiration_year=2024,cvv="123",expiration_month=9))
+	response2 = client.put(url_for('order_put',order_id=1),data=json.dumps(data2),headers=headers).status_code
+	assert response2 == 422
+	inf5190.reset_orders()
+	
+def test_15_ORDER_PUT_CREDIT_CARD_INVALID_NUMBER(client):
+	headers = {'Content-Type' : 'application/json'}
+	json_post = dict(product=dict(id=1231,quantity=2))
+	post = client.post(url_for('order_post'), data=json.dumps(json_post),headers=headers).status_code
+	data = dict(order=dict(email="caissy.jean-philippe@uqam.ca",shipping_information=dict(country='canada', address='201, rue president kennedy' , postal_code = 'H2X 3Y7' , city = 'Montreal' , province='QC')))
+	response = client.put(url_for('order_put',order_id=1),data=json.dumps(data),headers=headers).status_code
+	data2 = dict(credit_card=dict(name="john doe",number="4000 0000 0000 2222",expiration_year=2024,cvv="123",expiration_month=9))
+	response2 = client.put(url_for('order_put',order_id=1),data=json.dumps(data2),headers=headers).status_code
+	assert response2 == 422
+	inf5190.reset_orders()
+	
