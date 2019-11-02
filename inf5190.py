@@ -175,7 +175,7 @@ def order_put_credit_card(json_payload, order_id):
 	order = Order.get_or_none(order_id)
 
 	if(order.paid == True):
-		return error_message("order", "already-paid", "La commande a déjà été payée"), 422
+		return error_message("order", "already-paid", "La commande a déjà été payée."), 422
 
 	if(order.shipping_information == {}):
 		return error_message("order", "missing-fields", "Les informations du clients sont nécessaire avant d'appliquer une carte de crédit"), 422
