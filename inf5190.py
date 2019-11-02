@@ -115,8 +115,7 @@ def order_post():
 def order_put(order_id):
 	if not request.is_json:
 		return abort(400)
-
-	order = Order.get_or_none()
+	order = Order.get_or_none(order_id)
 	if(order == None):
 		return error_message("order", "no-order-found", "Aucune commande avec ce ID a été trouvée"), 404
 
