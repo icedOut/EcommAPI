@@ -209,3 +209,7 @@ def order_put_credit_card(json_payload, order_id):
 def init_db():
     db.create_tables([Product, Order])
     get_products()
+ 
+def reset_orders():
+	for order in Order().select():
+		order.delete_instance()
