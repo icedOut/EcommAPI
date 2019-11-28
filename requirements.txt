@@ -1,3 +1,4 @@
 Flask
 django-heroku
 gunicorn
+peewee
