@@ -56,10 +56,6 @@ class Order(BaseModel):
 
 
 
-db.create_tables([Product, Order])
-get_products()
-
-
 def perform_request(uri, method="GET", data=None):
     request = Request('https://caissy.dev/shops/{0}'.format(uri))
     request.method = method
