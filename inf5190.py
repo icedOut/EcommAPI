@@ -8,6 +8,7 @@ from flask import Flask, jsonify, request, abort, redirect, url_for, Response
 import peewee as p
 from playhouse.shortcuts import model_to_dict, dict_to_model
 import urllib
+from urllib.request import Request, urlopen
 import os
 import psycopg2
 from playhouse.db_url import connect
