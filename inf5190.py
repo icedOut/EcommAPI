@@ -13,7 +13,7 @@ import psycopg2
 from urllib import parse
 
 parse.uses_netloc.append('postgres')
-url = parse(os.environ["DATABASE_URL"])
+url = parse.uses_netloc(os.environ["DATABASE_URL"])
 db = PostgresqlDatabase(database=url.path[1:], user=url.username, password=url.password, host=url.hostname, port=url.port)
 db_proxy.initialize(db)
 
