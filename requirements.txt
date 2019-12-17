@@ -1,3 +1,8 @@
 Flask
 gunicorn
-peewee
+peewee==3.9.6
+psycopg2-binary
+urllib3
+django-request
+requests
+
