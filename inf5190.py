@@ -9,7 +9,8 @@ from playhouse.shortcuts import model_to_dict, dict_to_model
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 import os
-import urlparse, psycopg2
+import psycopg2
+from urllib.parse import urlparse
 
 urlparse.uses_netloc.append('postgres')
 url = urlparse.urlparse(os.environ["DATABASE_URL"])
