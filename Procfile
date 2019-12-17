@@ -1,1 +1,1 @@
-web: gunicorn inf5190:app
+web:gunicorn inf5190:app
