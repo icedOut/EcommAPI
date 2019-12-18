@@ -136,16 +136,16 @@ def order_put(order_id):
 		return jsonify(dict(order=model_to_dict(db_redis.get(order_id))))
 	else:	
 
-	json_payload = request.json
+		json_payload = request.json
 
-	if 'order' in json_payload:
-		if 'credit_card' in json_payload:				
-			return error_message("shipping_information", "bad-request", "On ne peut pas fournir un email et shipping_information avec une carte de crédit"), 422
-		return order_put_shipping_information(json_payload, order_id)
-	elif 'credit_card' in json_payload:
-		return order_put_credit_card(json_payload, order_id)
-	else:
-		return error_message("order", "missing-fields", "Aucune information de commande a été trouvée"), 422
+		if 'order' in json_payload:
+			if 'credit_card' in json_payload:				
+				return error_message("shipping_information", "bad-request", "On ne peut pas fournir un email et shipping_information avec une carte de crédit"), 422
+			return order_put_shipping_information(json_payload, order_id)
+		elif 'credit_card' in json_payload:
+			return order_put_credit_card(json_payload, order_id)
+		else:
+			return error_message("order", "missing-fields", "Aucune information de commande a été trouvée"), 422
 
 @app.route('/order/<int:order_id>', methods=['GET'])
 def order_get(order_id):
