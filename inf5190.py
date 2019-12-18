@@ -17,7 +17,7 @@ import redis
 if 'HEROKU' in os.environ or 'DYNO' in os.environ or 'I_AM_HEROKU' in os.environ:
 	db =  connect(os.environ.get('DATABASE_URL'))	
 else:
-	db = p.PostgresqlDatabase(os.environ['DB_NAME'], user=os.environ['DB_USER'], password=os.environ['DB_PASSWORD'], host=os.environ['DB_HOST'], port=os.environ['DB_PORT'])
+	db = p.PostgresqlDatabase(name=os.environ['DB_NAME'], user=os.environ['DB_USER'], password=os.environ['DB_PASSWORD'], host=os.environ['DB_HOST'], port=os.environ['DB_PORT'])
 db_redis = redis.from_url(os.environ['REDIS_URL'])
 app = Flask(__name__)
 	
