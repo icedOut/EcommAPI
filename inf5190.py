@@ -100,7 +100,39 @@ def products_get():
 @app.route('/order', methods=['POST'])
 def order_post():
 	if not request.is_json:
+		print('pas jason')
 		return abort(400)
+	if('product' in request.json):
+		return order_one_product(request)
+	elif('products' in request.json):
+		return order_multiple_product(request)
+	else:
+		return error_message("product", "missing-fields", "La création d'une commande nécessite un produit"), 422
+
+def order_multiple_product(request):
+	try:
+		json_payload = request.json['products']
+		for i in json_payload:
+			quantity = i['quantity']
+			product_id = i['id']
+			if quantity <= 0:
+				return error_message("product", "out-of-inventory", "Le produit demandé n'est pas en inventaire"), 422
+
+			product = Product.get_or_none(product_id)
+
+			if product is None or not product.in_stock:
+				return error_message("product", "out-of-inventory", "Le produit demandé n'est pas en inventaire"), 422
+	except KeyError:
+		return error_message("product", "missing-fields", "La création d'une commande nécessite un produit"), 422
+	new_order = Order()
+	new_order.products = json_payload
+	calculate_price(new_order)
+	new_order.save(force_insert=True)
+
+	return redirect(url_for("order_get", order_id=new_order.id))
+
+
+def order_one_product(request):
 	try:
 		json_payload = request.json['product']
 		quantity = json_payload['quantity']
@@ -117,8 +149,8 @@ def order_post():
 		return error_message("product", "out-of-inventory", "Le produit demandé n'est pas en inventaire"), 422
 
 	new_order = Order()
-	new_order.product = json_payload
-	calculate_price(product, new_order, quantity)
+	new_order.products = json_payload
+	calculate_price(new_order)
 	new_order.save(force_insert=True)
 
 	return redirect(url_for("order_get", order_id=new_order.id))
@@ -155,10 +187,16 @@ def order_get(order_id):
 def error_message(field, code, name):
 	return jsonify({ "errors" : { field : {"code" : code, "name" : name}}})
 
-def calculate_price(product, order, quantity):
-	order.total_price = product.price * quantity 
+def calculate_price(order):
+	total_weight = 0
 
-	total_weight = product.weight * quantity 
+	if(isinstance(order.products, list)):
+		for i in order.products:
+			order.total_price += Product.get_or_none(i['id']).price * i['quantity'] 
+			total_weight += Product.get_or_none(i['id']).weight * i['quantity']
+	else:
+		order.total_price += Product.get_or_none(order.products['id']).price * order.products['quantity']
+		total_weight += Product.get_or_none(order.products['id']).weight * order.products['quantity']
 	if total_weight < 500:
 		order.shipping_price = 5
 	elif total_weight < 2000:
