@@ -15,11 +15,10 @@ import redis
 
 
 if 'HEROKU' in os.environ or 'DYNO' in os.environ or 'I_AM_HEROKU' in os.environ:
-	db =  connect(os.environ.get('DATABASE_URL'))
-	db_redis = redis.from_url(os.environ['REDIS_URL'])
+	db =  connect(os.environ.get('DATABASE_URL'))	
 else:
 	db = p.PostgresqlDatabase(name=os.environ['DB_NAME'], user=os.environ['DB_USER'], password=os.environ['DB_PASSWORD'], host=os.environ['DB_HOST'], port=os.environ['DB_PORT'])
-	db_redis = redis.from_url(os.environ['REDIS_URL'])
+db_redis = redis.from_url(os.environ['REDIS_URL'])
 app = Flask(__name__)
 	
 
@@ -255,7 +254,7 @@ def order_put_credit_card(json_payload, order_id):
 		order.paid = True
 		order.save()
 		order_load = json.dumps(model_to_dict(order))
-		db_redis.set(order.id,order_load)
+		db_redis.set(order.id,order_load,ex=3600)
 		return redirect(url_for("order_get", order_id=order.id))
 	else:
 		return jsonify(r), 422
