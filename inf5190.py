@@ -131,10 +131,10 @@ def order_put(order_id):
 	if(order == None):
 		return error_message("order", "no-order-found", "Aucune commande avec ce ID a été trouvée"), 404
 
-	if(order_data = db_redis.get(order_id) == 1)
+	if(db_redis.exists(order_id) == 1)
 		print("Cached order : \n")
-		return jsonify(dict(order=model_to_dict(order_data)))
-	
+		return jsonify(dict(order=model_to_dict(db_redis.get(order_id))))
+	else:	
 
 	json_payload = request.json
 
