@@ -129,30 +129,26 @@ def order_put(order_id):
 		return abort(400)
 	order = Order.get_or_none(order_id)
 	if(order == None):
-		return error_message("order", "no-order-found", "Aucune commande avec ce ID a été trouvée"), 404
-
-	if(db_redis.exists(order_id) != 0):
-		print("Cached order  \n")
-		json.loads(db_redis.execute_command('JSON.GET', order_id ))
-		
-	else:	
-		print("Order not found in cache \n")
-		json_payload = request.json
-
-		if 'order' in json_payload:
-			if 'credit_card' in json_payload:				
-				return error_message("shipping_information", "bad-request", "On ne peut pas fournir un email et shipping_information avec une carte de crédit"), 422
-			return order_put_shipping_information(json_payload, order_id)
-		elif 'credit_card' in json_payload:
-			return order_put_credit_card(json_payload, order_id)
-		else:
-			return error_message("order", "missing-fields", "Aucune information de commande a été trouvée"), 422
+		return error_message("order", "no-order-found", "Aucune commande avec ce ID a été trouvée"), 404	
+	json_payload = request.json
+	if 'order' in json_payload:
+		if 'credit_card' in json_payload:				
+			return error_message("shipping_information", "bad-request", "On ne peut pas fournir un email et shipping_information avec une carte de crédit"), 422
+		return order_put_shipping_information(json_payload, order_id)
+	elif 'credit_card' in json_payload:
+		return order_put_credit_card(json_payload, order_id)
+	else:
+		return error_message("order", "missing-fields", "Aucune information de commande a été trouvée"), 422
 
 @app.route('/order/<int:order_id>', methods=['GET'])
 def order_get(order_id):
 	order = Order.get_or_none(order_id)
 	if order is None:
 		return error_message("order", "no-order-found", "Aucune commande avec ce ID a été trouvée"), 404
+	if(db_redis.exists(order_id) != 0):
+		print("Cached order  \n")
+		return json.loads(db_redis.execute_command('JSON.GET', order_id ))
+	print(" Order not in cache")
 	return jsonify(dict(order=model_to_dict(order)))
 
 def error_message(field, code, name):
