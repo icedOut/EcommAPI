@@ -50,7 +50,7 @@ class Product(BaseModel):
 
 class Order(BaseModel):
 	id=p.AutoField(primary_key=True)
-	product = JSONField(p.TextField(null=True))
+	products = JSONField(p.TextField(null=True))
 	credit_card=JSONField(default={})
 	shipping_information=JSONField(default={})
 	transaction= JSONField(default={})
