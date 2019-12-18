@@ -19,9 +19,9 @@ if 'HEROKU' in os.environ:
 	db_redis = redis.from_url(os.environ['REDIS_URL'])
 else:
 	 db = p.PostgresqlDatabase('dak5as5kodulg3', user='jmzhnzsjnbmfqd', password='cd9a7720ce6c5a7a10634b356897c5b1c00660bdc9a21f668c2ccbeb922ef386', host='ec2-174-129-255-106.compute-1.amazonaws.com', port=5432)
+	 db_redis = redis.from_url('redis://h:p0be32f3bcc3b78e159a7b2a77fe0f36ebf100ee1623edd9d3b56b0a20ee0650d@ec2-18-214-19-152.compute-1.amazonaws.com:31809')
 app = Flask(__name__)
-
-
+	
 
 class JSONField(p.TextField):
 	"""
@@ -213,6 +213,8 @@ def order_put_credit_card(json_payload, order_id):
 		order.transaction = r['transaction']
 		order.paid = True
 		order.save()
+		order_load = json.dumps(order)
+		db_redis.set(order.id,order_load)
 		return redirect(url_for("order_get", order_id=order.id))
 	else:
 		return jsonify(r), 422
