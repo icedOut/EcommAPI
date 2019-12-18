@@ -12,6 +12,7 @@ import os
 import psycopg2
 from playhouse.db_url import connect
 import redis
+import pickle
 
 
 if 'HEROKU' in os.environ:
@@ -133,7 +134,8 @@ def order_put(order_id):
 
 	if(db_redis.exists(order_id) != 0):
 		print("Cached order  \n")
-		return jsonify(dict(order=model_to_dict(db_redis.get(order_id))))
+		read = db_redis.get(order_id)
+		return pickle.loads(read)
 	else:	
 		print("Order not found in cache \n")
 		print(db_redis.exists(order_id))
