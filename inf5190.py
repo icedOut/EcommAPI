@@ -12,7 +12,6 @@ import os
 import psycopg2
 from playhouse.db_url import connect
 import redis
-import pickle
 
 
 if 'HEROKU' in os.environ:
@@ -134,11 +133,10 @@ def order_put(order_id):
 
 	if(db_redis.exists(order_id) != 0):
 		print("Cached order  \n")
-		read = db_redis.get(order_id)
-		return pickle.loads(read)
+		json.loads(db_redis.execute_command('JSON.GET', order_id ))
+		
 	else:	
 		print("Order not found in cache \n")
-		print(db_redis.exists(order_id))
 		json_payload = request.json
 
 		if 'order' in json_payload:
@@ -222,7 +220,7 @@ def order_put_credit_card(json_payload, order_id):
 		order.paid = True
 		order.save()
 		order_load = json.dumps(model_to_dict(order))
-		db_redis.set(order.id,order_load)
+		db_redis.execute_command('JSON.SET', order.id , '.', order_load)
 		return redirect(url_for("order_get", order_id=order.id))
 	else:
 		return jsonify(r), 422
