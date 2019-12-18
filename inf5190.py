@@ -18,8 +18,8 @@ if 'HEROKU' in os.environ:
 	db =  connect(os.environ.get('DATABASE_URL'))
 	db_redis = redis.from_url(os.environ['REDIS_URL'])
 else:
-	 db = p.PostgresqlDatabase('dak5as5kodulg3', user='jmzhnzsjnbmfqd', password='cd9a7720ce6c5a7a10634b356897c5b1c00660bdc9a21f668c2ccbeb922ef386', host='ec2-174-129-255-106.compute-1.amazonaws.com', port=5432)
-	 db_redis = redis.from_url('redis://h:p0be32f3bcc3b78e159a7b2a77fe0f36ebf100ee1623edd9d3b56b0a20ee0650d@ec2-18-214-19-152.compute-1.amazonaws.com:31809')
+	 db = p.PostgresqlDatabase(os.environ['DB_NAME'], user=os.environ['DB_USER'], password=os.environ['DB_PASSWORD'], host=os.environ['DB_HOST'], port=os.environ['DB_PORT'])
+	 db_redis = redis.from_url(os.environ['REDIS_URL'])
 app = Flask(__name__)
 	
 
