@@ -213,7 +213,7 @@ def order_put_credit_card(json_payload, order_id):
 		order.transaction = r['transaction']
 		order.paid = True
 		order.save()
-		order_load = json.dumps(order)
+		order_load = json.dumps(model_to_dict(order))
 		db_redis.set(order.id,order_load)
 		return redirect(url_for("order_get", order_id=order.id))
 	else:
