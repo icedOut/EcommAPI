@@ -12,6 +12,7 @@ import os
 import psycopg2
 from playhouse.db_url import connect
 import redis
+from rq import Queue, Worker, Connection
 
 
 if 'HEROKU' in os.environ or 'DYNO' in os.environ or 'I_AM_HEROKU' in os.environ:
@@ -20,6 +21,8 @@ else:
 	db = p.PostgresqlDatabase(name=os.environ['DB_NAME'], user=os.environ['DB_USER'], password=os.environ['DB_PASSWORD'], host=os.environ['DB_HOST'], port=os.environ['DB_PORT'])
 db_redis = redis.from_url(os.environ['REDIS_URL'])
 app = Flask(__name__)
+
+queue= Queue(connection=db_redis)
 	
 
 class JSONField(p.TextField):
@@ -168,7 +171,10 @@ def order_put(order_id):
 			return error_message("shipping_information", "bad-request", "On ne peut pas fournir un email et shipping_information avec une carte de crédit"), 422
 		return order_put_shipping_information(json_payload, order_id)
 	elif 'credit_card' in json_payload:
-		return order_put_credit_card(json_payload, order_id)
+		order.being_paid=True
+		order.save()
+		job = queue.enqueue(order_put_credit_card, json_payload, order_id)
+		return redirect(url_for('verify_job', job_id=job.id))
 	else:
 		return error_message("order", "missing-fields", "Aucune information de commande a été trouvée"), 422
 
@@ -177,6 +183,10 @@ def order_get(order_id):
 	order = Order.get_or_none(order_id)
 	if order is None:
 		return error_message("order", "no-order-found", "Aucune commande avec ce ID a été trouvée"), 404
+
+	if(order.being_paid):
+		return Response("",status=202)
+
 	if(db_redis.exists(order_id) != 0):
 		print("Cached order  \n")
 		data = db_redis.get(order_id)
@@ -253,11 +263,14 @@ def order_put_credit_card(json_payload, order_id):
 		order.credit_card = r['credit_card']
 		order.transaction = r['transaction']
 		order.paid = True
+		order.being_paid = False
 		order.save()
 		order_load = json.dumps(model_to_dict(order))
 		db_redis.set(order.id,order_load,ex=3600)
 		return redirect(url_for("order_get", order_id=order.id))
 	else:
+		order.being_paid = False
+		order.save()
 		return jsonify(r), 422
 
 @app.cli.command("init-db")
@@ -268,3 +281,15 @@ def init_db():
 def reset_orders():
 	for order in Order().select():
 		order.delete_instance()
+
+@app.route("/job/<string:job_id>")
+def verify_job(job_id):
+	job = queue.fetch_job(job_id)
+	if not job.is_finished:
+		return Response("", status=202)
+	return job.result
+
+@app.cli.command("worker")
+def rq_worker():
+	worker = Worker([queue], connection=db_redis)
+	worker.work()
