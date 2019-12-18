@@ -147,7 +147,8 @@ def order_get(order_id):
 		return error_message("order", "no-order-found", "Aucune commande avec ce ID a été trouvée"), 404
 	if(db_redis.exists(order_id) != 0):
 		print("Cached order  \n")
-		return json.loads(db_redis.execute_command('JSON.GET', order_id ))
+		data = db_redis.get(order_id)
+		return data
 	print(" Order not in cache")
 	return jsonify(dict(order=model_to_dict(order)))
 
@@ -216,7 +217,7 @@ def order_put_credit_card(json_payload, order_id):
 		order.paid = True
 		order.save()
 		order_load = json.dumps(model_to_dict(order))
-		db_redis.execute_command('JSON.SET', order.id , '.', order_load)
+		db_redis.set(order.id,order_load)
 		return redirect(url_for("order_get", order_id=order.id))
 	else:
 		return jsonify(r), 422
