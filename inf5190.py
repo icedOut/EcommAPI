@@ -171,6 +171,8 @@ def order_put(order_id):
 			return error_message("shipping_information", "bad-request", "On ne peut pas fournir un email et shipping_information avec une carte de crédit"), 422
 		return order_put_shipping_information(json_payload, order_id)
 	elif 'credit_card' in json_payload:
+		if(order.being_paid):
+			return Response(409)
 		order.being_paid=True
 		order.save()
 		job = queue.enqueue(order_put_credit_card, json_payload, order_id)
