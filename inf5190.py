@@ -190,7 +190,7 @@ def order_get(order_id):
 	if(db_redis.exists(order_id) != 0):
 		print("Cached order  \n")
 		data = db_redis.get(order_id)
-		return data
+		return json.loads(data).encode('utf-8')
 	print(" Order not in cache")
 	return jsonify(dict(order=model_to_dict(order)))
 
