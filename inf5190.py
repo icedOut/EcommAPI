@@ -2,7 +2,6 @@
 import json
 import datetime
 import time
-
 import click
 from flask import Flask, jsonify, request, abort, redirect, url_for, Response
 import peewee as p
@@ -12,14 +11,17 @@ from urllib.request import Request, urlopen
 import os
 import psycopg2
 from playhouse.db_url import connect
+import redis
 
 
 if 'HEROKU' in os.environ:
 	db =  connect(os.environ.get('DATABASE_URL'))
+	db = redis.from_url(os.environ['REDIS_URL'])
 else:
 	 db = p.PostgresqlDatabase('dak5as5kodulg3', user='jmzhnzsjnbmfqd', password='cd9a7720ce6c5a7a10634b356897c5b1c00660bdc9a21f668c2ccbeb922ef386', host='ec2-174-129-255-106.compute-1.amazonaws.com', port=5432)
-
 app = Flask(__name__)
+
+
 
 class JSONField(p.TextField):
 	"""
